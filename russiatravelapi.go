@@ -21,7 +21,8 @@ type APIResponse struct {
 // every place object that can be found and it contains almost everything.
 type Item struct {
 	XMLName         xml.Name        `xml:"item"`
-	ItemID          uint32          `xml:"id,attr"`
+	ItemID          string          `xml:"id,attr"`
+	ItemName 		string 			`xml:"name,attr"`
 	Image           string          `xml:"image,attr"`
 	Geo             string          `xml:"geo,attr"`
 	Types           []types         `xml:"types"`
@@ -48,10 +49,14 @@ type photo struct {
 	XMLName xml.Name `xml:"photo"`
 	Link    string   `xml:"file"`
 }
-
+// NEW!!!
 type types struct {
 	XMLName xml.Name `xml:"types"`
-	Type    []string `xml:"type"`
+	Type    []RType `xml:"type"`
+}
+// NEW!!!
+type RType struct {
+	Data string `xml:",chardata"`
 }
 
 type name struct {
@@ -138,6 +143,22 @@ func CreateRequestDependingOnRadius(radius int, geo string) []byte {
 	return output
 }
 
+func CreateRequestDependingOnType(radius int, geo string, usrType string) []byte {
+	v := &Request{Action: "get-objects-for-update"}
+	newPoint := Point{Geo: geo, Radius: radius}
+	v.Point = append(v.Point, newPoint)
+	objType := objectType{TypeID: usrType}
+	v.objectType = append(v.objectType, objType)
+	v.Attributes = append(v.Attributes, Attributes{Review: &RReview{Text: ""}})
+
+	output, err := xml.MarshalIndent(v, "  ", "    ")
+	if err != nil {
+		fmt.Println("error: %v\n", err)
+	}
+
+	return output
+}
+
 func SendRequest(xmlbody string) []byte {
 	form := url.Values{}
 	form.Add("login", "view")
@@ -176,6 +197,10 @@ func GetPhotoLinks(items []Item) []string {
 		res = append(res, i.Image)
 	}
 
+	if res == nil {
+		res = res[:0]
+	}
+
 	return res
 }
 
@@ -196,12 +221,66 @@ func GetReviews(items []Item) []string {
 
 	return res
 }
-
-func Len(items []Item) int {
-	lenght := 0
-	for range items {
-		lenght += 1
+// NEW!!!
+func GetTypes(items []Item) []string {
+	var res []string
+	for _, i := range items {
+		res = append(res, i.Types[0].Type[0].Data)
 	}
 
-	return lenght
+	return res
+}
+
+func GetTypeNames(items []Item) map[string][]string {
+	var IDs []string
+	var names []string
+	res := make(map[string][]string)
+	for _, i := range items {
+		IDs = append(IDs, i.ItemID)
+		names = append(names, i.ItemName)
+	}
+	res["IDs"] = IDs
+	res["names"] = names
+
+	return res
+
+}
+
+func GetListOfAllPlaces(coords string, radius int) APIResponse {
+	newRequest := CreateRequestDependingOnRadius(radius, coords)
+	xmlbody := xml.Header + string(newRequest)
+	body := SendRequest(xmlbody)
+	resp := GetResponse(body)
+
+	return resp
+}
+
+func GetListOfChosenTypePlaces(coords string, radius int, usrType string) APIResponse {
+	newRequest := CreateRequestDependingOnType(radius, coords, usrType)
+	xmlbody := xml.Header + string(newRequest)
+	body := SendRequest(xmlbody)
+	resp := GetResponse(body)
+
+	return resp
+}	
+
+
+// NEW!!!
+func GetListOfTypes() APIResponse {
+	newRequest := "<request action=\"get-library\" type=\"object-type\" />"
+	xmlbody := xml.Header + string(newRequest)
+	body := SendRequest(xmlbody)
+	resp := GetResponse(body)
+
+	return resp
+}
+
+// CHANGED LENGTH!
+func Len(items []Item) int {
+	length := 0
+	for range items {
+		length += 1
+	}
+
+	return length
 }

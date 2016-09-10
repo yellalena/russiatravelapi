@@ -25,7 +25,7 @@ type Item struct {
 	ItemName 		string 			`xml:"name,attr"`
 	Image           string          `xml:"image,attr"`
 	Geo             string          `xml:"geo,attr"`
-	Types           []types         `xml:"types"`
+	Types           []Types         `xml:"types"`
 	Name            []name          `xml:"name"`
 	addressCountry  string          `xml:"addressCountry"`
 	addressLocality string          `xml:"addressLocality"`
@@ -50,12 +50,12 @@ type photo struct {
 	Link    string   `xml:"file"`
 }
 // NEW!!!
-type types struct {
+type Types struct {
 	XMLName xml.Name `xml:"types"`
-	Type    []RType `xml:"type"`
+	RType    []RTypeID `xml:"type"`
 }
 // NEW!!!
-type RType struct {
+type RTypeID struct {
 	Data string `xml:",chardata"`
 }
 
@@ -95,7 +95,7 @@ type Request struct {
 	Items         []items         `xml:"items,omitempty"`
 	addressRegion []addressRegion `xml:"addressRegion,omitempty"`
 	Point         []Point         `xml:"point,omitempty"`
-	objectType    []objectType    `xml:"objectType,omitempty"`
+	ObjectType    []ObjectType    `xml:"objectType,omitempty"`
 	Attributes    []Attributes    `xml:"attributes"`
 }
 type Attributes struct {
@@ -108,8 +108,9 @@ type Attributes struct {
 	//addressRegion []addressRegion `xml:"addressRegion"`
 }
 
-type objectType struct {
-	TypeID string `xml:"id"`
+type ObjectType struct {
+	XMLName xml.Name `xml:"objectType"`
+	TypeID   string `xml:"id"` 
 }
 
 type addressRegion struct {
@@ -129,26 +130,25 @@ type Point struct {
 
 // --------------------------- FUNCTIONS -------------------------------------------
 
-func CreateRequestDependingOnRadius(radius int, geo string) []byte {
+func CreateRequestDependingOnType(radius int, geo string, usrType string) []byte {
 	v := &Request{Action: "get-objects-for-update"}
 	newPoint := Point{Geo: geo, Radius: radius}
 	v.Point = append(v.Point, newPoint)
+	v.ObjectType = append(v.ObjectType, ObjectType{TypeID: usrType})
 	v.Attributes = append(v.Attributes, Attributes{Review: &RReview{Text: ""}})
 
 	output, err := xml.MarshalIndent(v, "  ", "    ")
 	if err != nil {
 		fmt.Println("error: %v\n", err)
 	}
-
+	
 	return output
 }
 
-func CreateRequestDependingOnType(radius int, geo string, usrType string) []byte {
+func CreateRequestDependingOnRadius(radius int, geo string) []byte {
 	v := &Request{Action: "get-objects-for-update"}
 	newPoint := Point{Geo: geo, Radius: radius}
 	v.Point = append(v.Point, newPoint)
-	objType := objectType{TypeID: usrType}
-	v.objectType = append(v.objectType, objType)
 	v.Attributes = append(v.Attributes, Attributes{Review: &RReview{Text: ""}})
 
 	output, err := xml.MarshalIndent(v, "  ", "    ")
@@ -225,7 +225,7 @@ func GetReviews(items []Item) []string {
 func GetTypes(items []Item) []string {
 	var res []string
 	for _, i := range items {
-		res = append(res, i.Types[0].Type[0].Data)
+		res = append(res, i.Types[0].RType[0].Data)
 	}
 
 	return res

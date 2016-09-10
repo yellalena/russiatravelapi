@@ -49,12 +49,12 @@ type photo struct {
 	XMLName xml.Name `xml:"photo"`
 	Link    string   `xml:"file"`
 }
-// NEW!!!
+
 type Types struct {
 	XMLName xml.Name `xml:"types"`
 	RType    []RTypeID `xml:"type"`
 }
-// NEW!!!
+
 type RTypeID struct {
 	Data string `xml:",chardata"`
 }
@@ -221,7 +221,7 @@ func GetReviews(items []Item) []string {
 
 	return res
 }
-// NEW!!!
+
 func GetTypes(items []Item) []string {
 	var res []string
 	for _, i := range items {
@@ -264,8 +264,6 @@ func GetListOfChosenTypePlaces(coords string, radius int, usrType string) APIRes
 	return resp
 }	
 
-
-// NEW!!!
 func GetListOfTypes() APIResponse {
 	newRequest := "<request action=\"get-library\" type=\"object-type\" />"
 	xmlbody := xml.Header + string(newRequest)
@@ -275,7 +273,6 @@ func GetListOfTypes() APIResponse {
 	return resp
 }
 
-// CHANGED LENGTH!
 func Len(items []Item) int {
 	length := 0
 	for range items {
